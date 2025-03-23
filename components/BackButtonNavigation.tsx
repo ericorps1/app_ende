@@ -10,31 +10,30 @@ interface PropsBackButtonNavigation {
 
 export const BackButtonNavigation = ({onPressBack,title}:PropsBackButtonNavigation) => {
   return (
-    <>
-        <View style={ { ...platformTheme.fila, marginBottom: 10 } }>
-            <FontAwesome5Icon 
-                style={ platformTheme.iconBack } 
-                onPress={ onPressBack } 
-                size={ 30 } 
-                name={'arrow-left'} 
-                color={colors.darkBlue} 
-            />
-            <Text 
-                style={{
-                    ...styles.title,
-                    flex: 8,
-                    fontSize: 20,
-                    marginRight: 10
-                } }
-            >{ title }</Text>
-        </View>
-    </>
+    <View style={ { ...platformTheme.fila, marginBottom: 10 } }>
+      <FontAwesome5Icon 
+        style={ platformTheme.iconBack } 
+        onPress={ onPressBack } 
+        size={ 30 } 
+        name={'arrow-left'} 
+        color={colors.darkBlue} 
+      />
+      <Text 
+        style={{
+          ...styles.title,
+          flex: 8,
+          fontSize: 20,
+          marginRight: 10,
+        } }
+      >{ title }</Text>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
     title: {
         fontSize: 30,
-        color: colors.darkBlue
+        color: colors.darkBlue,
+        flex: 1,
     },
 });

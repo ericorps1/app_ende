@@ -37,8 +37,6 @@ export const HtmlToJsx = ({strHtml,styles='margin: 10px; padding-bottom: 10px'}:
   //   },
   // };
   const CustomImg = (props:any) => {
-    console.log("Image full props =>>", props);
-  
     // Extraemos `src` correctamente desde tnode
     const imageUri = props?.tnode?.attributes?.src || "";
   

@@ -7,7 +7,7 @@ import { FormatNameAvatar } from '@/hooks/useFormats';
 import { DataProfileAlumno, TypesMsgModalType } from '@/interfaces/appInterfaces';
 import endeApi from '@/api/estudianteAPI';
 import { isEmail, valFormInput } from '@/hooks/useValidations';
-import { ImagePickerResponse, launchCamera, launchImageLibrary } from 'react-native-image-picker';
+// import { ImagePickerResponse, launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useUploads } from '@/hooks/useUploads';
 import { getImageColors } from '@/helpers/getColores';
 import { ModalMessages } from '@/components/ModalMessages';
@@ -25,7 +25,7 @@ const Profile = () => {
     const [modalContrasena, setModalContrasena] = useState(false)
     const [infoContra, setInfoContra] = useState({ante_con: '', nuev_con: '', conf_con:''})
     const [loadingActuCont, setLoadingActuCont] = useState(false)
-    const [objImg, setObjImg] = useState<ImagePickerResponse>()
+    const [objImg, setObjImg] = useState<any>()
     const [visible, setVisible] = useState(false);
 
     const getDataProfile = async () => {
@@ -134,9 +134,9 @@ const Profile = () => {
     const getPhoto = async (type:'photo'|'img') => {
         let result:any = { assets: undefined };
         if(type==='photo'){
-            result = await launchCamera({mediaType: 'photo', cameraType: 'front', maxWidth: 500, maxHeight: 500});
+            // result = await launchCamera({mediaType: 'photo', cameraType: 'front', maxWidth: 500, maxHeight: 500});
         }else{
-            result = await launchImageLibrary({mediaType: 'photo', maxWidth: 500, maxHeight: 500});
+            // result = await launchImageLibrary({mediaType: 'photo', maxWidth: 500, maxHeight: 500});
         }
         if(result.assets){
             setObjImg(result);

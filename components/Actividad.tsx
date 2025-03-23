@@ -15,18 +15,22 @@ interface ActividadProps{
 
 export const Actividad = ({actividad,onPress}:ActividadProps) => {
     const [calAct, setCalAct] = useState({pun_cal_act: 0, fec_cal_act: '', int_cal_act: 0});
-    const isFocused = useIsFocused();
+    const {id_cal_act} = actividad;
+    // const isFocused = useIsFocused();
+    // useEffect(() => {
+    //     if(isFocused){
+    //         getCalAct();
+    //     }
+    // }, [isFocused])
     useEffect(() => {
-        if(isFocused){
-            getCalAct();
-        }
-    }, [isFocused])
+      getCalAct();
+    }, [id_cal_act])
 
     const getCalAct = async() => {
-        const {data} = await endeApi.get('cal_act/'+actividad.id_cal_act);
-        if(data.trans){
-            setCalAct(data.data[0]);
-        }
+      const {data} = await endeApi.get('cal_act/'+actividad.id_cal_act);
+      if(data.trans){
+          setCalAct(data.data[0]);
+      }
     }
 
     let iconName = 'file';

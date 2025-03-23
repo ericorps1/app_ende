@@ -115,7 +115,7 @@ export const platformTheme = StyleSheet.create({
         backgroundColor: colors.error
     },
     btnDarkBlue: {
-        backgroundColor: colors.darkBlue
+        backgroundColor: colors.darkBlue,
     },
     btnBlue: {
         backgroundColor: colors.blue

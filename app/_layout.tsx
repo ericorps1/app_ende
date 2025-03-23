@@ -11,6 +11,14 @@ import { store } from './store';
 import LoadingScreen from '@/screens/LoadingScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import { App } from '@/screens/App';
+import { LogBox } from "react-native";
+
+LogBox.ignoreLogs([
+  "Warning: TRenderEngineProvider: Support for defaultProps will be removed",
+  "Warning: MemoizedTNodeRenderer: Support for defaultProps will be removed",
+  "Warning: TNodeChildrenRenderer: Support for defaultProps will be removed",
+  "Warning: MemoizedTNodeRenderer: Support for defaultProps will be removed",
+]);
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

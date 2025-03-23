@@ -28,6 +28,7 @@ export default function BloqueDetalle () {
   const [loading, setLoading] = useState(true)
   const [viewAlertVencida, setViewAlertVencida] = useState(false)
   const [conBlo, setConBlo] = useState('')
+  const [newRender, setNewRender] = useState(0)
   const router = useRouter();
   
   useEffect( () => {
@@ -38,7 +39,7 @@ export default function BloqueDetalle () {
       setLoading(false)
       setViewAlertVencida(false)
     }
-  },[])
+  },[id_blo, nom_blo, des_blo, id_sub_hor, nom_mat])
 
   const getDataView = async () => {
       setLoading(true)
@@ -54,51 +55,79 @@ export default function BloqueDetalle () {
   }
 
   const getActividades = async () => {
-      const {data} = await endeApi.get('/actividades/',{ params:{ id_sub_hor, id_blo, id_alu_ram: data_alumno?.id_alu_ram } });
-      setActividades(data.data);
+    const {data} = await endeApi.get('/actividades/',{ params:{ id_sub_hor, id_blo, id_alu_ram: data_alumno?.id_alu_ram } });
+    setActividades(data.data);
   }
 
   const getConBlo = async () => {
-    console.log('id_blo =>> ', id_blo)
-      const {data} = await endeApi.get('/bloque/'+id_blo,{ params:{ cols: 'con_blo' } });
-      if(data.trans){
-          setConBlo(data.data.length>0 ? data.data[0].con_blo : '');
+    const {data} = await endeApi.get('/bloque/'+id_blo,{ params:{ cols: 'con_blo' } });
+    if(data.trans){
+      setConBlo(data.data.length>0 ? data.data[0].con_blo : '');
+    }
+  }
+
+  const viewDetailRecTeorico = (htmlText:string,url_vid:string|null,title:string,arc_arc:string|null) => {
+      if(url_vid!==null && url_vid!==''){//si tiene una url de video
+        const params = {
+          htmlText: JSON.stringify({ html: htmlText }),
+          title,
+          url: url_vid.replace("watch?v=", "embed/"),
+          downloadFile: 'false',
+          viewMiniChat: 'true',
+        };
+        const queryString = new URLSearchParams(params).toString();
+        router.push(`/web-view-full-screen?${queryString}`);
+          // navigation.navigate('WebViewFullScreen', {htmlText: {html: htmlText}, title, url: url_vid.replace('watch?v=','embed/'), downloadFile:false, viewMiniChat: true});
+      }else if (arc_arc!==null && arc_arc!==''){
+        const params = {
+          htmlText: JSON.stringify({ html: htmlText }),
+          title,
+          url: baseUrlFiles+arc_arc.replace("watch?v=", "embed/"),
+          downloadFile: 'true',
+          viewMiniChat: 'true',
+        };
+        const queryString = new URLSearchParams(params).toString();
+        router.push(`/web-view-full-screen?${queryString}`);
+      }else{
+        const params = {
+          htmlText: JSON.stringify({ html: htmlText }),
+          title,
+          url: 'null',
+          downloadFile: 'false',
+          viewMiniChat: 'true',
+        };
+        const queryString = new URLSearchParams(params).toString();
+        router.push(`/web-view-full-screen?${queryString}`);
       }
   }
 
-  // const viewDetailRecTeorico = (htmlText:string,url_vid:string|null,title:string,arc_arc:string|null) => {
-  //     if(url_vid!==null && url_vid!==''){//si tiene una url de video
-  //         navigation.navigate('WebViewFullScreen', {htmlText: {html: htmlText}, title, url: url_vid.replace('watch?v=','embed/'), downloadFile:false, viewMiniChat: true});
-  //     }else if (arc_arc!==null && arc_arc!==''){
-  //         navigation.navigate('WebViewFullScreen', {htmlText: {html: htmlText}, title, url: baseUrlFiles+arc_arc, downloadFile:true, viewMiniChat: true});
-  //     }else{
-  //         navigation.navigate('WebViewFullScreen', {htmlText: {html: htmlText}, title, url: null, downloadFile:false, viewMiniChat: true});
-  //     }
-  // }
-
-  // const viewDetailActividad = (actividad:ActividadData) => {
-  //     const tipo = actividad.tipo
-  //     switch (tipo) {
-  //         case 'Foro' : navigation.navigate('Foro', { data_actividad: actividad });
-  //             break;
-  //         case 'Examen' : navigation.navigate('Examen', { data_actividad: actividad });
-  //             break;
-  //         case 'Entregable' : navigation.navigate('Entregable', { data_actividad: {...actividad, nom_blo, nom_mat} });
-  //             break;
-  //     }
-  // }
+  const viewDetailActividad = (actividad:ActividadData) => {
+    const { tipo } = actividad;
+    setNewRender(newRender+1)
+    switch (tipo) {
+      case 'Foro': 
+        router.push({ pathname: "/foro", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        break;
+      case 'Examen':
+        router.push({ pathname: "/examen", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        break;
+      case 'Entregable':
+        router.push({ pathname: "/entregable", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        break;
+    }
+  }
 
   if(loading) return (<LoadingScreen text={`Cargando ${nom_blo}`}/>)
   if(viewAlertVencida) return (
-      <PaperMessages
-          dismissable
-          title='Actividad vencida :('
-          visible={viewAlertVencida}
-          message='No realizaste esta actividad en tiempo y forma, comunícate con tu profesor...'
-          buttonText='Aceptar'
-          onDismiss = {() => setViewAlertVencida(false)}
-          pressButton = {() => setViewAlertVencida(false)}
-      />
+    <PaperMessages
+      dismissable
+      title='Actividad vencida :('
+      visible={viewAlertVencida}
+      message='No realizaste esta actividad en tiempo y forma, comunícate con tu profesor...'
+      buttonText='Aceptar'
+      onDismiss = {() => setViewAlertVencida(false)}
+      pressButton = {() => setViewAlertVencida(false)}
+    />
   )
   const onPressVideoConference = () => {
     console.log('Videoconferencia')
@@ -106,81 +135,79 @@ export default function BloqueDetalle () {
   }
 
   return (
-      <SafeAreaView style={ styles.container }>
-          <BackButtonNavigation
-            onPressBack={() => router.push({ pathname: "/bloque-detalle", params: {...bloque_data,nom_mat} })}
-            title={nom_blo+' - '+des_blo}
-          />
-          <ScrollView  style={{marginBottom: 50}}>
-            <View style={styles.containerVideoConference}>
-              <Touchable 
-                onPress={onPressVideoConference}
-                styleContainer={{
-                  ...styles.floatingIcon,
-                  backgroundColor: colors.primary
-                }}
-              >
-                <Icon name="videocam-outline" size={30} color="#fff" />
-              </Touchable>
+    <SafeAreaView style={ styles.container }>
+      <BackButtonNavigation
+        onPressBack={() => router.push({ pathname: "/materias", params: { ...{id_sub_hor,nom_mat} } })}
+        title={nom_blo+' - '+des_blo}
+      />
+      <ScrollView  style={{marginBottom: 50}}>
+        <View style={styles.containerVideoConference}>
+          <Touchable 
+            onPress={onPressVideoConference}
+            styleContainer={{
+              ...styles.floatingIcon,
+              backgroundColor: colors.primary
+            }}
+          >
+            <Icon name="videocam-outline" size={30} color="#fff" />
+          </Touchable>
+        </View>
+        <View style={ styles.bodyBloDetalle }>
+          {
+            conBlo!=='' && 
+            <View>
+              <HtmlToJsx strHtml={conBlo}/>
             </View>
-            <View style={ styles.bodyBloDetalle }>
-                {
-                    conBlo!=='' && 
-                    <View>
-                        <HtmlToJsx strHtml={conBlo}/>
-                    </View>
+          }
+          <View style={styles.bodyBloDetalle}>
+          {
+            recursosTeoricos.length>0 ? 
+              recursosTeoricos.map((recurso:RecursoTeoricoData)=>{
+                let icon = '';
+                let iconColor = '';
+                switch(recurso.tipo){
+                  case 'Video' : icon = 'youtube'; iconColor = 'red';
+                    break;
+                  case 'Wiki' : icon = 'wordpress'; iconColor = colors.green;
+                    break;
+                  case 'Archivo' : icon = 'file-word'; iconColor = colors.info;
+                    break;
+                  default : icon = 'youtube'; iconColor = 'red';
                 }
-                <View style={styles.bodyBloDetalle}>
-                    {
-                        recursosTeoricos.length>0 ? 
-                            recursosTeoricos.map((recurso:RecursoTeoricoData)=>{
-                                let icon = '';
-                                let iconColor = '';
-                                switch(recurso.tipo){
-                                    case 'Video' : icon = 'youtube'; iconColor = 'red';
-                                        break;
-                                    case 'Wiki' : icon = 'wordpress'; iconColor = colors.green;
-                                        break;
-                                    case 'Archivo' : icon = 'file-word'; iconColor = colors.info;
-                                        break;
-                                    default : icon = 'youtube'; iconColor = 'red';
-                                }
-                                return <RecursoTeorico 
-                                            key={recurso.identificador} 
-                                            icon={icon} 
-                                            iconColor={iconColor} 
-                                            text={recurso.titulo} 
-                                            onPress={() => console.log('Recurso Teorico')}
-                                            // onPress={() => viewDetailRecTeorico(recurso.descripcion,recurso.url_vid, recurso.titulo, recurso.arc_arc)}
-                                        />
-                            })
-                        :
-                            <Text style={styles.textNoRecTeo}>El bloque no contiene recursos teoricos.</Text>
-                    }
-                </View>
-            </View>
-            <View style={styles.contActividades}>
-                <Text style={styles.titleActividades}>Actividades</Text>
-                {
-                    actividades.length>0
-                    ?
-                        actividades.map((actividad:ActividadData)=>{
-                            return <Actividad 
-                                        key={actividad.identificador} 
-                                        actividad={actividad} 
-                                        onPress={
-                                          () => console.log('Actividad')
-                                          // () => viewDetailActividad(actividad)
-                                        }
-                                    />
-                        })
-                    :
-                        <Text style={styles.textNoRecTeo}>El bloque no contiene actividades.</Text>
-                }
-            </View>
-          </ScrollView>
-          <ChatAlumno/>
-      </SafeAreaView>
+                return <RecursoTeorico 
+                          key={recurso.identificador} 
+                          icon={icon} 
+                          iconColor={iconColor} 
+                          text={recurso.titulo} 
+                          onPress={() => viewDetailRecTeorico(recurso.descripcion,recurso.url_vid, recurso.titulo, recurso.arc_arc)}
+                        />
+              })
+            :
+              <Text style={styles.textNoRecTeo}>El bloque no contiene recursos teoricos.</Text>
+          }
+          </View>
+        </View>
+        <View style={styles.contActividades}>
+          <Text style={styles.titleActividades}>Actividades</Text>
+          {
+            actividades.length>0
+            ?
+              actividades.map((actividad:ActividadData)=>{
+                return <Actividad 
+                          key={actividad.identificador} 
+                          actividad={actividad} 
+                          onPress={
+                            () => viewDetailActividad(actividad)
+                          }
+                        />
+              })
+            :
+              <Text style={styles.textNoRecTeo}>El bloque no contiene actividades.</Text>
+          }
+        </View>
+      </ScrollView>
+      <ChatAlumno/>
+    </SafeAreaView>
   )
 }
 
