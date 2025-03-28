@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/core';
-import React from 'react'
+import React, { useState } from 'react'
 import { Image, StyleSheet, View } from 'react-native';
 import { Card } from 'react-native-paper';
 import { TarjetaBloqueINT } from '../interfaces/appInterfaces';
@@ -12,7 +12,7 @@ export const TarjetaBloque = ({bloque_data,nom_mat}:TarjetaBloqueINT) => {
   const {id_blo, nom_blo,des_blo,img_blo} = bloque_data;
   const router = useRouter();
   const pressTarjetaBloque = () => {
-    router.push({ pathname: "/bloque-detalle", params: {...bloque_data,nom_mat} });
+    router.push({ pathname: "/bloque-detalle", params: {...bloque_data, nom_mat} });
   }
 
   return (

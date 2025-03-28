@@ -14,14 +14,13 @@ import { PaperConfirmElimReplica } from '@/components/PaperConfirmElimReplica';
 import { HtmlToJsx } from '@/components/HtmlToJsx';
 import { ChatAlumno } from '@/components/ChatAlumno';
 import endeApi from '@/api/estudianteAPI';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ModalMessages } from '@/components/ModalMessages';
 import ConfirmModal from '@/components/ModalConfirm';
 
 export default function Foro() {
   const params:any = useLocalSearchParams();
   const {identificador,titulo,descripcion,identificador_copia} = JSON.parse(params.data_actividad);
-  const newRender = params.newRender;
   const { data_alumno } = useContext( AuthContext );
   const { width } = useWindowDimensions();
   const [comentarios, setComentarios] = useState([])
@@ -36,9 +35,12 @@ export default function Foro() {
   const [dataReplica, setDataReplica] = useState(initialDataRep)
   const [messageErrorReplica, setMessageErrorReplica] = useState('')
 
-  useEffect(() => {
-    getComentarios();
-  }, [newRender])
+  // Codigo para que se ejecute cada vez que se entre a la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      getComentarios();
+    }, [])
+  );
   
   const getComentarios = async () => {
     const {data} = await endeApi.get('foro_comentarios', {params: { id_for_cop: identificador_copia }});

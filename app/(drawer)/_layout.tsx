@@ -2,8 +2,8 @@ import endeApi from '@/api/estudianteAPI'
 import { IconSymbol } from '@/components/ui/IconSymbol'
 import { AuthContext } from '@/context/AuthContext'
 import { FormatNameAvatar } from '@/hooks/useFormats'
-import { colors, platformTheme, statusColors } from '@/theme/platformTheme'
-import { Feather, FontAwesome, FontAwesome6, MaterialIcons, SimpleLineIcons } from '@expo/vector-icons'
+import { colors, platformTheme } from '@/theme/platformTheme'
+import { AntDesign, FontAwesome, FontAwesome6, SimpleLineIcons } from '@expo/vector-icons'
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
 import { router, usePathname } from 'expo-router'
 import Drawer from 'expo-router/drawer'
@@ -61,6 +61,15 @@ const CustomDrawerContent = (props:any) => {
         labelStyle={[styles.labelDrawer, pathname === '/pagos' ? styles.activeLabelDrawer : {}]}
         style={[styles.drawer, pathname === '/pagos' ? styles.activeDrawer : {}]}
         onPress={() => router.push('/(drawer)/pagos')}
+      />
+      <DrawerItem
+        icon={({color, size}) => (
+          <AntDesign name="message1" size={24} color="black" />
+        )}
+        label={"Mensajes"}
+        labelStyle={[styles.labelDrawer, pathname === '/mensajes' ? styles.activeLabelDrawer : {}]}
+        style={[styles.drawer, pathname === '/mensajes' ? styles.activeDrawer : {}]}
+        onPress={() => router.push('/(drawer)/mensajes')}
       />
       {
         (materiasAlumno.length>0) && (

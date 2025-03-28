@@ -1,5 +1,5 @@
 import React, {useContext, useState, useEffect} from 'react'
-import { View, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, ScrollView, Image, StyleSheet, Alert } from 'react-native';
 import { AuthContext } from '@/context/AuthContext';
 import { Portal, TextInput, Modal, Text, Button, Provider, Avatar, Divider, DefaultTheme } from 'react-native-paper';
 import { platformTheme, colors } from '@/theme/platformTheme';
@@ -7,7 +7,8 @@ import { FormatNameAvatar } from '@/hooks/useFormats';
 import { DataProfileAlumno, TypesMsgModalType } from '@/interfaces/appInterfaces';
 import endeApi from '@/api/estudianteAPI';
 import { isEmail, valFormInput } from '@/hooks/useValidations';
-// import { ImagePickerResponse, launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { useUploads } from '@/hooks/useUploads';
 import { getImageColors } from '@/helpers/getColores';
 import { ModalMessages } from '@/components/ModalMessages';
@@ -134,38 +135,81 @@ const Profile = () => {
     const getPhoto = async (type:'photo'|'img') => {
         let result:any = { assets: undefined };
         if(type==='photo'){
-            // result = await launchCamera({mediaType: 'photo', cameraType: 'front', maxWidth: 500, maxHeight: 500});
-        }else{
-            // result = await launchImageLibrary({mediaType: 'photo', maxWidth: 500, maxHeight: 500});
-        }
-        if(result.assets){
-            setObjImg(result);
+          // 🟡 Pedir permisos antes de abrir la cámara
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permiso denegado", "Se necesita acceso a la cámara para tomar fotos.");
+            return;
+          }
+      
+          // 🟢 Abrir la cámara
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            cameraType: ImagePicker.CameraType.back, // Cámara trasera
+            quality: 0.5, // Calidad 50%
+          });
+      
+          // ✅ Si no se cancela, guardar la imagen
+          if (!result.canceled) {
+            setObjImg({
+              ...objImg,
+              uri: result.assets[0].uri,
+              name: result.assets[0].fileName ?? 'file-name.jpg',
+              type: result.assets[0].mimeType ?? 'image/jpeg',
+            });
             setNewProfilePic(result.assets[0].uri);
+          }
+        }else{
+          // 🟡 Pedir permisos antes de abrir la galería
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permiso denegado", "Se necesita acceso a la galería para seleccionar imágenes.");
+            return;
+          }
+  
+          // 🟢 Abrir la galería
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.5, // Reducir calidad para optimizar almacenamiento
+          });
+  
+          // ✅ Si no se cancela, guardar la imagen seleccionada
+          if (!result.canceled) {
+            setObjImg({
+              ...objImg,
+              uri: result.assets[0].uri,
+              name: result.assets[0].fileName ?? 'file-name.jpg',
+              type: result.assets[0].mimeType ?? 'image/jpeg',
+            });
+            setNewProfilePic(result.assets[0].uri);
+          }
         }
     }
 
     const uploadImg = async() => {
-        try { 
-            if(!objImg) return false;
-            if(!objImg.assets) return false;
-            if(!objImg.assets[0]) return false;
-            setUploading(true);
-            const { upload, filename } = await useUploads('/alumno/'+data_alumno?.id_alu, objImg.assets[0]);
-            if(upload===true){
-                await checkToken();
-            }
-            const [primary,secondary]:any = await getImageColors('https://plataforma.ahjende.com/uploads/'+filename);
-            setUploading(false);
-            setNewProfilePic('');
-            setModalText('La foto del perfil ha sido actualizada exitosamente.');
-            setTypeMsgModal('success');
-            setVisible(true);
-        } catch (error:any) {
-            setModalText('Error inesperado, por favor, contacte a soporte si el problema persiste.');
-            setTypeMsgModal('error');
-            setVisible(true);
-            console.log('uploadImg =>>>> ',error);
+      try { 
+        if(!objImg) return false;
+        setUploading(true);
+        const { upload, filename } = 
+          await useUploads(
+            '/alumno/'+data_alumno?.id_alu,
+            {...objImg, fileName: objImg.name}
+          );
+        if(upload===true){
+          await checkToken();
         }
+        console.log('uploadImg =>>>> ',upload);
+        setUploading(false);
+        setNewProfilePic('');
+        setModalText('La foto del perfil ha sido actualizada exitosamente.');
+        setTypeMsgModal('success');
+        setVisible(true);
+      } catch (error:any) {
+        setModalText('Error inesperado, por favor, contacte a soporte si el problema persiste.');
+        setTypeMsgModal('error');
+        setVisible(true);
+        console.log('uploadImg =>>>> ',error);
+      }
     }
 
     const cambiarContrasena = async() => {
@@ -224,225 +268,225 @@ const Profile = () => {
         setLoadingActuCont(false);
     }
     return (
-        (loadingAccount) 
-        ? <LoadingScreen/>
-        : <Provider theme={DefaultTheme}>
-            <Portal>
-                <ScrollView contentContainerStyle={{ paddingBottom: 70 }}>
-                    <View style={ styles.viewAvatar }>
-                        { (data_alumno?.fot_alu || newProfilePic!=='') 
-                            ? (
-                                <Image 
-                                    source={{ uri: (newProfilePic==='') ? 'https://plataforma.ahjende.com/uploads/'+data_alumno?.fot_alu : newProfilePic}}
-                                    style={ platformTheme.avatar }
-                                />
-                            )
-                            : (
-                                <Avatar.Text 
-                                  style={ platformTheme.avatar }
-                                  label={FormatNameAvatar(data_alumno?.nom_alu)}
-                                />
-                            )
-                        }
-                        <Text style={ platformTheme.avatarName }> { data_alumno?.nom_alu } </Text>
-                        <View style={ [styles.buttonList, platformTheme.fila] }>
-                            {   (newProfilePic==='')
-                            ?   (
-                                    <>
-                                        <Button 
-                                          icon="camera"
-                                          labelStyle={{ color: 'white' }}
-                                          onPress={() => getPhoto('photo')}
-                                          style={ [platformTheme.btnInfo, platformTheme.btn] }
-                                        >CAMARA</Button>
-                                        <Button
-                                          icon="image"
-                                          labelStyle={{ color: 'white' }}
-                                          onPress={() => getPhoto('img')}
-                                          style={ [platformTheme.btnSuccess, platformTheme.btn] }
-                                        >GALERIA</Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button 
-                                            icon="pencil"
-                                            color='white'
-                                            onPress={ () => uploadImg() }
-                                            style={ [platformTheme.btnSuccess, platformTheme.btn, styles.botonActualizar] }
-                                            disabled={uploading}
-                                            loading={ uploading }
-                                        >{ !uploading ? 'ACTUALIZAR' : 'SUBIENDO...' }</Button>
-                                        <Button 
-                                            icon="cancel"
-                                            color='white'
-                                            onPress={ () => setNewProfilePic('') } 
-                                            style={ [platformTheme.btnDanger, platformTheme.btn] }
-                                            disabled={uploading}
-                                        >Cancelar</Button>
-                                    </>
-                                )
-                            }
-                        </View>
-                    </View>
-                    <Divider/>
-                    <View style={ styles.formContainer }>
-                        <View style={{ flex:1 }}>
-                            <Text style={ styles.title }> Información personal </Text>
-                        </View>
-                        <TextInput
-                            keyboardType='phone-pad'
-                            mode="outlined"
-                            label="Teléfono"
-                            placeholder="Ingrese su número de teléfono"
-                            // right={<TextInput.Affix text="/100" />}
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.tel_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, tel_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="Dirección"
-                            placeholder="Ingrese su dirección"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.dir_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, dir_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="Colonia"
-                            placeholder="Ingrese la colonia"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.col_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, col_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="Delegación"
-                            placeholder="Ingrese su delegación"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.del_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, del_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="Entidad"
-                            placeholder="Ingrese su entidad"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.ent_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, ent_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="Correo electrónico"
-                            placeholder="Ingrese su correo electrónico personal"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.cor1_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, cor1_alu: value}) }
-                        />
-                        <Divider style={styles.divider}/>
-                        <TextInput
-                            mode="outlined"
-                            label="CURP"
-                            placeholder="Ingrese su CURP"
-                            activeOutlineColor={colors.primary}
-                            value={ infoAlumno?.cur_alu }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoAlumno({...infoAlumno, cur_alu: value}) }
-                        />
-                        <View style={ [styles.buttonList, platformTheme.fila, {alignSelf:'center', marginTop: 10}] }>
-                            <Button 
-                                icon="pencil"
-                                mode="contained"
-                                onPress={ updateInfo }
-                                disabled={ loadingForm }
-                                loading={ loadingForm }
-                                style={ [styles.botonActualizar, platformTheme.btn] }
-                            >
-                                Actualizar
-                            </Button>
-                            <Button 
-                                icon="lock"
-                                mode="contained"
-                                onPress={ () => setModalContrasena(true) }
-                                style={ [platformTheme.btnSuccess, platformTheme.btn] }
-                            >
-                                CONTRASEÑA
-                            </Button>
-                        </View>
-                    </View>
-                </ScrollView>
-                <Modal visible={modalContrasena} onDismiss={()=>setModalContrasena(false)} contentContainerStyle={platformTheme.modalContainer}>
-                    <View>
-                        <Text style={ { ...styles.title, fontWeight: '600' } }>CAMBIAR CONTRASEÑA</Text>
-                    </View>
-                    <View>
-                        <TextInput
-                            secureTextEntry={true}
-                            mode="outlined"
-                            label="Contraseña anterior"
-                            placeholder="Ingrese la contraseña actual de su cuenta"
-                            activeOutlineColor={colors.primary}
-                            value={ infoContra.ante_con }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoContra({...infoContra, ante_con: value}) }
-                        />
-                    </View>
-                    <View>
-                        <TextInput
-                            secureTextEntry={true}
-                            mode="outlined"
-                            label="Nueva contraseña"
-                            placeholder="Ingrese la nueva contraseña"
-                            activeOutlineColor={colors.primary}
-                            value={ infoContra.nuev_con }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoContra({...infoContra, nuev_con: value}) }
-                        />
-                    </View>
-                    <View>
-                        <TextInput
-                            secureTextEntry={true}
-                            mode="outlined"
-                            label="Confirmar contraseña"
-                            placeholder="Vuelva a ingresar la nueva contraseña"
-                            activeOutlineColor={colors.primary}
-                            value={ infoContra.conf_con }
-                            style={ styles.inputStyle }
-                            onChangeText={ (value) => setInfoContra({...infoContra, conf_con: value}) }
-                        />
-                    </View>
-                    <View style={ [styles.buttonContainer, platformTheme.fila, {marginTop: 10, alignSelf:'center'}] }>
-                        <Button 
-                            icon='pencil'
-                            onPress={ cambiarContrasena }
-                            style={ [styles.botonCerrar, platformTheme.btn] }
-                            labelStyle={{ color: colors.white }}
-                            disabled={loadingActuCont}
-                            loading={loadingActuCont}
-                        >ACTUALIZAR</Button>
-                        <Button 
-                            icon='cancel'
-                            onPress={ () => setModalContrasena(false) }
-                            style={ [styles.botonCerrar, platformTheme.btn, platformTheme.btnDanger] }
-                            labelStyle={{ color: colors.white }}
-                            disabled={loadingActuCont}
-                        >CANCELAR</Button>
-                    </View>
-                </Modal>
-                <ModalMessages visible={visible} typeMsgModal={typeMsgModal} modalText={modalText} onDismiss={()=>setVisible(false)}/>
-            </Portal>
-        </Provider>
+      (loadingAccount) 
+      ? <LoadingScreen/>
+      : <Provider theme={DefaultTheme}>
+        <Portal>
+          <ScrollView contentContainerStyle={{ paddingBottom: 70 }}>
+            <View style={ styles.viewAvatar }>
+              { (data_alumno?.fot_alu || newProfilePic!=='') 
+                ? (
+                  <Image 
+                    source={{ uri: (newProfilePic==='') ? 'https://plataforma.ahjende.com/uploads/'+data_alumno?.fot_alu : newProfilePic}}
+                    style={ platformTheme.avatar }
+                  />
+                )
+                : (
+                  <Avatar.Text 
+                    style={ platformTheme.avatar }
+                    label={FormatNameAvatar(data_alumno?.nom_alu)}
+                  />
+                )
+              }
+              <Text style={ platformTheme.avatarName }> { data_alumno?.nom_alu } </Text>
+              <View style={ [styles.buttonList, platformTheme.fila] }>
+                { (newProfilePic==='')
+                ? (
+                    <>
+                      <Button 
+                        icon="camera"
+                        labelStyle={{ color: 'white' }}
+                        onPress={() => getPhoto('photo')}
+                        style={ [platformTheme.btnInfo, platformTheme.btn] }
+                      >CAMARA</Button>
+                      <Button
+                        icon="image"
+                        labelStyle={{ color: 'white' }}
+                        onPress={() => getPhoto('img')}
+                        style={ [platformTheme.btnSuccess, platformTheme.btn] }
+                      >GALERIA</Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        icon="pencil"
+                        textColor='white'
+                        onPress={ () => uploadImg() }
+                        style={ [platformTheme.btnSuccess, platformTheme.btn, styles.botonActualizar] }
+                        disabled={uploading}
+                        loading={ uploading }
+                      >{ !uploading ? 'ACTUALIZAR' : 'SUBIENDO...' }</Button>
+                      <Button 
+                        icon="cancel"
+                        textColor='white'
+                        onPress={ () => setNewProfilePic('') } 
+                        style={ [platformTheme.btnDanger, platformTheme.btn] }
+                        disabled={uploading}
+                      >CANCELAR</Button>
+                    </>
+                    )
+                }
+              </View>
+            </View>
+            <Divider/>
+            <View style={ styles.formContainer }>
+              <View style={{ flex:1 }}>
+                <Text style={ styles.title }> Información personal </Text>
+              </View>
+              <TextInput
+                keyboardType='phone-pad'
+                mode="outlined"
+                label="Teléfono"
+                placeholder="Ingrese su número de teléfono"
+                // right={<TextInput.Affix text="/100" />}
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.tel_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, tel_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                mode="outlined"
+                label="Dirección"
+                placeholder="Ingrese su dirección"
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.dir_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, dir_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                mode="outlined"
+                label="Colonia"
+                placeholder="Ingrese la colonia"
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.col_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, col_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                  mode="outlined"
+                  label="Delegación"
+                  placeholder="Ingrese su delegación"
+                  activeOutlineColor={colors.primary}
+                  value={ infoAlumno?.del_alu }
+                  style={ styles.inputStyle }
+                  onChangeText={ (value) => setInfoAlumno({...infoAlumno, del_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                mode="outlined"
+                label="Entidad"
+                placeholder="Ingrese su entidad"
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.ent_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, ent_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                mode="outlined"
+                label="Correo electrónico"
+                placeholder="Ingrese su correo electrónico personal"
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.cor1_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, cor1_alu: value}) }
+              />
+              <Divider style={styles.divider}/>
+              <TextInput
+                mode="outlined"
+                label="CURP"
+                placeholder="Ingrese su CURP"
+                activeOutlineColor={colors.primary}
+                value={ infoAlumno?.cur_alu }
+                style={ styles.inputStyle }
+                onChangeText={ (value) => setInfoAlumno({...infoAlumno, cur_alu: value}) }
+              />
+              <View style={ [styles.buttonList, platformTheme.fila, {alignSelf:'center', marginTop: 10}] }>
+                <Button 
+                  icon="pencil"
+                  mode="contained"
+                  onPress={ updateInfo }
+                  disabled={ loadingForm }
+                  loading={ loadingForm }
+                  style={ [styles.botonActualizar, platformTheme.btn] }
+                >
+                  Actualizar
+                </Button>
+                <Button 
+                  icon="lock"
+                  mode="contained"
+                  onPress={ () => setModalContrasena(true) }
+                  style={ [platformTheme.btnSuccess, platformTheme.btn] }
+                >
+                  CONTRASEÑA
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
+          <Modal visible={modalContrasena} onDismiss={()=>setModalContrasena(false)} contentContainerStyle={platformTheme.modalContainer}>
+              <View>
+                  <Text style={ { ...styles.title, fontWeight: '600' } }>CAMBIAR CONTRASEÑA</Text>
+              </View>
+              <View>
+                  <TextInput
+                      secureTextEntry={true}
+                      mode="outlined"
+                      label="Contraseña anterior"
+                      placeholder="Ingrese la contraseña actual de su cuenta"
+                      activeOutlineColor={colors.primary}
+                      value={ infoContra.ante_con }
+                      style={ styles.inputStyle }
+                      onChangeText={ (value) => setInfoContra({...infoContra, ante_con: value}) }
+                  />
+              </View>
+              <View>
+                  <TextInput
+                      secureTextEntry={true}
+                      mode="outlined"
+                      label="Nueva contraseña"
+                      placeholder="Ingrese la nueva contraseña"
+                      activeOutlineColor={colors.primary}
+                      value={ infoContra.nuev_con }
+                      style={ styles.inputStyle }
+                      onChangeText={ (value) => setInfoContra({...infoContra, nuev_con: value}) }
+                  />
+              </View>
+              <View>
+                  <TextInput
+                      secureTextEntry={true}
+                      mode="outlined"
+                      label="Confirmar contraseña"
+                      placeholder="Vuelva a ingresar la nueva contraseña"
+                      activeOutlineColor={colors.primary}
+                      value={ infoContra.conf_con }
+                      style={ styles.inputStyle }
+                      onChangeText={ (value) => setInfoContra({...infoContra, conf_con: value}) }
+                  />
+              </View>
+              <View style={ [styles.buttonContainer, platformTheme.fila, {marginTop: 10, alignSelf:'center'}] }>
+                  <Button 
+                      icon='pencil'
+                      onPress={ cambiarContrasena }
+                      style={ [styles.botonCerrar, platformTheme.btn] }
+                      labelStyle={{ color: colors.white }}
+                      disabled={loadingActuCont}
+                      loading={loadingActuCont}
+                  >ACTUALIZAR</Button>
+                  <Button 
+                      icon='cancel'
+                      onPress={ () => setModalContrasena(false) }
+                      style={ [styles.botonCerrar, platformTheme.btn, platformTheme.btnDanger] }
+                      labelStyle={{ color: colors.white }}
+                      disabled={loadingActuCont}
+                  >CANCELAR</Button>
+              </View>
+          </Modal>
+          <ModalMessages visible={visible} typeMsgModal={typeMsgModal} modalText={modalText} onDismiss={()=>setVisible(false)}/>
+        </Portal>
+      </Provider>
     )
 }
 

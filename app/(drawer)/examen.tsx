@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { View, SafeAreaView, ScrollView, StyleSheet, Text, TouchableHighlight, Dimensions } from 'react-native';
 import { BackButtonNavigation } from '@/components/BackButtonNavigation';
 import { AuthContext } from '@/context/AuthContext';
@@ -11,14 +11,13 @@ import moment from 'moment';
 import { useIsFocused } from '@react-navigation/core';
 import { ChatAlumno } from '@/components/ChatAlumno';
 import endeApi from '@/api/estudianteAPI';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import ConfirmModal from '@/components/ModalConfirm';
 
 export default function Examen() {
     const { data_alumno } = useContext( AuthContext );
     const params:any = useLocalSearchParams();
     const {identificador_copia, titulo,descripcion,dur_exa,id_cal_act,inicio,fin,puntaje,estatus_fecha} = JSON.parse(params.data_actividad);
-    const newRender = params.newRender;
     const [calAct, setCalAct] = useState({pun_cal_act: 0, fec_cal_act: '', int_cal_act: 0});
     const [visibleAlertInicExa, setVisibleAlertInicExa] = useState(false);
     const [visibleAlertFinExamen, setVisibleAlertFinExamen] = useState(false);
@@ -26,16 +25,15 @@ export default function Examen() {
     // const isFocused = useIsFocused();
     const router = useRouter();
 
-    // useEffect(() => {
-    //     if(isFocused){
-    //         getIntentos();
-    //     }
-    // }, [isFocused, identificador_copia])
-    useEffect(() => {
-      getIntentos();
-    }, [id_cal_act, newRender])
+    // Codigo para que se ejecute cada vez que se entre a la pantalla
+    useFocusEffect(
+      useCallback(() => {
+        getIntentos();
+      }, [])
+    );
     
     const getIntentos = async() => {
+      console.log('1234....');
       const {data} = await endeApi.get('cal_act/'+id_cal_act);
       if(data.trans){
           setCalAct(data.data[0]);
@@ -89,7 +87,7 @@ export default function Examen() {
     }
     return (
       <SafeAreaView style={ styles.container }>
-        <BackButtonNavigation onPressBack={() => router.back()} title={titulo+newRender}/>
+        <BackButtonNavigation onPressBack={() => router.back()} title={titulo}/>
         <ScrollView style={{marginBottom: 50, height: Dimensions.get("window").height}}>
           <View style={ styles.bodyExaDetalle }>
             <View style={ styles.containterDetailExa }>

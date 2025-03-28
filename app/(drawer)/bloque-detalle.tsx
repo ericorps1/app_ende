@@ -28,7 +28,6 @@ export default function BloqueDetalle () {
   const [loading, setLoading] = useState(true)
   const [viewAlertVencida, setViewAlertVencida] = useState(false)
   const [conBlo, setConBlo] = useState('')
-  const [newRender, setNewRender] = useState(0)
   const router = useRouter();
   
   useEffect( () => {
@@ -103,16 +102,15 @@ export default function BloqueDetalle () {
 
   const viewDetailActividad = (actividad:ActividadData) => {
     const { tipo } = actividad;
-    setNewRender(newRender+1)
     switch (tipo) {
       case 'Foro': 
-        router.push({ pathname: "/foro", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        router.push({ pathname: "/foro", params: { ...{ data_actividad: JSON.stringify(actividad) } }});
         break;
       case 'Examen':
-        router.push({ pathname: "/examen", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        router.push({ pathname: "/examen", params: { ...{ data_actividad: JSON.stringify(actividad) } }});
         break;
       case 'Entregable':
-        router.push({ pathname: "/entregable", params: { ...{ data_actividad: JSON.stringify(actividad), newRender } }});
+        router.push({ pathname: "/entregable", params: { ...{ data_actividad: JSON.stringify(actividad) } }});
         break;
     }
   }

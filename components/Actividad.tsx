@@ -4,8 +4,10 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { colors, platformTheme } from '@/theme/platformTheme';
 import FontAwesome5Icon from 'react-native-vector-icons/FontAwesome5';
 import { formatDateActividades } from '@/hooks/useFormats';
-import { useIsFocused } from '@react-navigation/core';
 import endeApi from '@/api/estudianteAPI';
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+import LoadingScreen from '@/screens/LoadingScreen';
 
 interface ActividadProps{
     actividad: ActividadData;
@@ -16,21 +18,22 @@ interface ActividadProps{
 export const Actividad = ({actividad,onPress}:ActividadProps) => {
     const [calAct, setCalAct] = useState({pun_cal_act: 0, fec_cal_act: '', int_cal_act: 0});
     const {id_cal_act} = actividad;
-    // const isFocused = useIsFocused();
-    // useEffect(() => {
-    //     if(isFocused){
-    //         getCalAct();
-    //     }
-    // }, [isFocused])
-    useEffect(() => {
-      getCalAct();
-    }, [id_cal_act])
+    const [loading, setLoading] = useState(false)
+
+    // Codigo para que se ejecute cada vez que se entre a la pantalla
+    useFocusEffect(
+      useCallback(() => {
+        getCalAct();
+      }, [])
+    );
 
     const getCalAct = async() => {
+      setLoading(true);
       const {data} = await endeApi.get('cal_act/'+actividad.id_cal_act);
       if(data.trans){
-          setCalAct(data.data[0]);
+        setCalAct(data.data[0]);
       }
+      setLoading(false);
     }
 
     let iconName = 'file';
@@ -53,6 +56,8 @@ export const Actividad = ({actividad,onPress}:ActividadProps) => {
             statusAct = 'Pendiente'
         }
     }
+
+    if (loading) return <LoadingScreen/>
 
     return (
         <TouchableOpacity style={ styles.container } onPress={onPress}>

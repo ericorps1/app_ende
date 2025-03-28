@@ -1,15 +1,16 @@
-import React, {useState,useRef,useEffect,useContext} from 'react'
+import React, {useState,useRef,useEffect,useContext, useCallback} from 'react'
 import { View, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import FontAwesome5Icon from 'react-native-vector-icons/FontAwesome5';
 import { colors, platformTheme } from '../theme/platformTheme';
 import { isImage } from '../hooks/useValidations';
 import ImageModal from 'react-native-image-modal';
-import { fnDownloadFile } from '../hooks/useDownloads';
 import { Button } from 'react-native-paper';
 import { AuthContext } from '../context/AuthContext';
 import { formatDateHour } from '../hooks/useFormats';
 import endeApi from '@/api/estudianteAPI';
 import LoadingScreen from '@/screens/LoadingScreen';
+import { useFocusEffect } from 'expo-router';
+import { useDownload } from '@/hooks/useDownloads';
 
 interface MensajesChatAlumnoProps {
     id_sal: number;
@@ -40,6 +41,7 @@ export const MensajesChatAlumno = ({id_sal,welcomeMsg,id_pro,heightChatHistory=3
     const [loadingMsgs, setLoadingMsgs] = useState(true);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const { data_alumno } = useContext( AuthContext );
+    const fnDownloadFile = useDownload();
     let titleDate = '';
     let viewTitleDate = false;
     useEffect(() => {
@@ -54,12 +56,12 @@ export const MensajesChatAlumno = ({id_sal,welcomeMsg,id_pro,heightChatHistory=3
     }, [idSala])
 
     const loadMessages = async() => {
-        const {data} = await endeApi.get('mensaje',{params:{id_sal: idSala, usu_visto: data_alumno?.id_alu, tip_usu_visto: 'Alumno'}});
-        // console.log('cargando mensajes');
-        if(data.trans){
-            setMensajes(data.data);
-        }
-        setLoadingMsgs(false);
+      const {data} = await endeApi.get('mensaje',{params:{id_sal: idSala, usu_visto: data_alumno?.id_alu, tip_usu_visto: 'Alumno'}});
+      // console.log('cargando mensajes');
+      if(data.trans){
+          setMensajes(data.data);
+      }
+      setLoadingMsgs(false);
     }
     const validarMensaje = async() => {
         if(msgChat.trim()!==""){
@@ -220,7 +222,7 @@ export const MensajesChatAlumno = ({id_sal,welcomeMsg,id_pro,heightChatHistory=3
 const styles = StyleSheet.create({
     containerMsgChatAlumno: {
         flex: 1,
-        marginHorizontal: 10
+        marginHorizontal: 10,
     },
     chatHistory: {
         marginVertical: 10,

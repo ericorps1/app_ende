@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { View, Text, SafeAreaView, ScrollView, useWindowDimensions, StyleSheet, Dimensions, Alert } from 'react-native';
 import { BackButtonNavigation } from '@/components/BackButtonNavigation';
 import { AuthContext } from '@/context/AuthContext';
@@ -17,15 +17,12 @@ import { ChatAlumno } from '@/components/ChatAlumno';
 import endeApi from '@/api/estudianteAPI';
 import ConfirmModal from '@/components/ModalConfirm';
 import { useDownload } from '@/hooks/useDownloads';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function Entregable() {
   const params:any = useLocalSearchParams();
   const {identificador,titulo,descripcion,identificador_copia,nom_blo,nom_mat} = JSON.parse(params.data_actividad);
-  const newRender = params.newRender;
-  useEffect(() => {
-    getEntregableAlu();
-  }, [newRender])
+  
   const initialStateObFile = { fileCopyUri: null, name: "", size: 0, type: "", uri: "" };
   const { data_alumno } = useContext( AuthContext );
   const [infoRespTarea, setInfoRespTarea] = useState<any>([]);
@@ -37,16 +34,23 @@ export default function Entregable() {
   const [textEliminar, setTextEliminar] = useState('');
   const { fnDownloadFile, downloadProgress } = useDownload();
   const router = useRouter();
+
+  // Codigo para que se ejecute cada vez que se entre a la pantalla
+    useFocusEffect(
+      useCallback(() => {
+        getEntregableAlu();
+      }, [])
+    );
   //funcion para consultar si el alumno ya subio un entregable para esta actividad
   const getEntregableAlu = async () => {
-      const {data} = await endeApi.get('/tarea', {params: {id_ent_cop: identificador_copia, id_alu_ram: data_alumno?.id_alu_ram}});
-      setLoading(true);
-      if(data.trans){
-          setInfoRespTarea(data.data);
-      }else{
-          setInfoRespTarea([]);
-      }
-      setLoading(false);
+    const {data} = await endeApi.get('/tarea', {params: {id_ent_cop: identificador_copia, id_alu_ram: data_alumno?.id_alu_ram}});
+    setLoading(true);
+    if(data.trans){
+        setInfoRespTarea(data.data);
+    }else{
+        setInfoRespTarea([]);
+    }
+    setLoading(false);
   }
   const { width } = useWindowDimensions();
 
